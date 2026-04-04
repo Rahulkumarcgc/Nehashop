@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_URL } from '../config';
 
 const ProductContext = createContext();
 
@@ -11,7 +12,7 @@ export const ProductProvider = ({ children }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/products`);
+        const response = await fetch(`${API_URL}/products`);
         if (!response.ok) throw new Error('Failed to fetch products');
         const data = await response.json();
         
