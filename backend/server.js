@@ -1,11 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
 
-// Temporary fix - will move to env vars later
 process.env.DATABASE_URL = 'postgresql://postgres:Chhena%4032919@db.vgnfcoqenvtdkwrgyihq.supabase.co:5432/postgres'
 
+const { PrismaClient } = require('@prisma/client');
 const app = express();
 const prisma = new PrismaClient();
 
