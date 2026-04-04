@@ -1,13 +1,18 @@
-const express = require('express'); // trigger restart
+const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
+
+// Temporary fix - will move to env vars later
+process.env.DATABASE_URL = 'postgresql://postgres:Chhena%4032919@db.vgnfcoqenvtdkwrgyihq.supabase.co:5432/postgres'
 
 const app = express();
 const prisma = new PrismaClient();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*' // baad mein Vercel URL se replace karenge
+}));
 app.use(express.json());
 
 // Routes -------------
@@ -42,8 +47,7 @@ app.get('/api/products/:id', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
   try {
     const { clerkUserId, items, totalAmount, paymentMethod, utrNumber, shipping } = req.body;
-    
-    // Create the order and its related items in a secure Prisma transaction
+
     const newOrder = await prisma.order.create({
       data: {
         clerkUserId: clerkUserId || "guest",
@@ -51,26 +55,21 @@ app.post('/api/orders', async (req, res) => {
         paymentMethod,
         utrNumber: paymentMethod === 'upi' ? utrNumber : null,
         status: paymentMethod === 'upi' ? 'Pending Verification' : 'Processing',
-        
-        // Shipping Details
         shippingName: shipping.name,
         shippingPhone: shipping.phone,
         shippingAddress: shipping.address,
         shippingCity: shipping.city,
         shippingZip: shipping.zip,
-
-        // Create Order Items dynamically
         items: {
           create: items.map(item => ({
-             productId: item.dbId, // we will map this soon on the frontend
-             quantity: item.qty,
-             priceAtTime: item.price
+            productId: item.dbId,
+            quantity: item.qty,
+            priceAtTime: item.price
           }))
         }
       },
-      // Give us the items back so we can confirm it worked
       include: {
-        items: true 
+        items: true
       }
     });
 
@@ -99,17 +98,16 @@ app.get('/api/orders/:clerkUserId', async (req, res) => {
 // 5. Cloud Cart Synchronization
 app.post('/api/cart/sync', async (req, res) => {
   const { clerkUserId, items } = req.body;
-  
+
   try {
-    // Transaction thoroughly clears and replaces the cloud cart to perfectly match their local selection
     await prisma.$transaction(async (tx) => {
       await tx.cartItem.deleteMany({ where: { clerkUserId } });
-      
+
       if (items && items.length > 0) {
         await tx.cartItem.createMany({
           data: items.map(i => ({
             clerkUserId,
-            productId: i.dbId || String(i.id), // Ensure it references the Prisma Product ID string
+            productId: i.dbId || String(i.id),
             quantity: i.qty || i.quantity || 1
           }))
         });
@@ -138,25 +136,14 @@ app.get('/api/cart/:clerkUserId', async (req, res) => {
 
 // --- User Management ---
 
-// Sync User from Clerk
 app.post('/api/users/sync', async (req, res) => {
   try {
     const { clerkUserId, email, firstName, lastName } = req.body;
-    
-    // Upsert User
+
     const user = await prisma.user.upsert({
       where: { clerkUserId },
-      update: {
-        email,
-        firstName,
-        lastName,
-      },
-      create: {
-        clerkUserId,
-        email,
-        firstName,
-        lastName,
-      }
+      update: { email, firstName, lastName },
+      create: { clerkUserId, email, firstName, lastName }
     });
 
     res.json({ success: true, user });
@@ -166,14 +153,13 @@ app.post('/api/users/sync', async (req, res) => {
   }
 });
 
-// Get User Profile with Details
 app.get('/api/users/:clerkUserId', async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { clerkUserId: req.params.clerkUserId },
       include: { detail: true }
     });
-    
+
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (error) {
@@ -182,7 +168,6 @@ app.get('/api/users/:clerkUserId', async (req, res) => {
   }
 });
 
-// Update User Details
 app.put('/api/users/:clerkUserId/details', async (req, res) => {
   try {
     const { clerkUserId } = req.params;
@@ -194,10 +179,7 @@ app.put('/api/users/:clerkUserId/details', async (req, res) => {
     const updatedDetails = await prisma.userDetail.upsert({
       where: { userId: user.id },
       update: detailsData,
-      create: {
-        userId: user.id,
-        ...detailsData
-      }
+      create: { userId: user.id, ...detailsData }
     });
 
     res.json({ success: true, detail: updatedDetails });
@@ -209,31 +191,27 @@ app.put('/api/users/:clerkUserId/details', async (req, res) => {
 
 // --- Coupon Management ---
 
-// Validate Coupon
 app.post('/api/coupons/validate', async (req, res) => {
   try {
     const { code, cartTotal } = req.body;
-    
+
     const coupon = await prisma.coupon.findUnique({
       where: { code: code.toUpperCase() }
     });
 
     if (!coupon) return res.status(404).json({ valid: false, error: 'Invalid coupon code' });
     if (!coupon.isActive) return res.status(400).json({ valid: false, error: 'Coupon is inactive' });
-    
+
     const now = new Date();
     if (coupon.validFrom > now) return res.status(400).json({ valid: false, error: 'Coupon is not yet active' });
     if (coupon.validUntil && coupon.validUntil < now) return res.status(400).json({ valid: false, error: 'Coupon has expired' });
-    
     if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
       return res.status(400).json({ valid: false, error: 'Coupon usage limit reached' });
     }
-
     if (coupon.minOrderAmount && cartTotal < coupon.minOrderAmount) {
       return res.status(400).json({ valid: false, error: `Minimum order amount of ₹${coupon.minOrderAmount} required` });
     }
 
-    // Calculate discount
     let discount = 0;
     if (coupon.discountType === 'percentage') {
       discount = cartTotal * (coupon.discountValue / 100);
@@ -251,7 +229,6 @@ app.post('/api/coupons/validate', async (req, res) => {
   }
 });
 
-// Get all coupons (typically admin only, but left open for demo)
 app.get('/api/coupons', async (req, res) => {
   try {
     const coupons = await prisma.coupon.findMany({
@@ -315,11 +292,10 @@ app.get('/api/products/:productId/reviews', async (req, res) => {
 app.post('/api/reviews', async (req, res) => {
   try {
     const { clerkUserId, productId, rating, comment } = req.body;
-    // Assume productId here is the true string id or we have to find it
     const product = await prisma.product.findUnique({
       where: { numericId: parseInt(productId) }
     });
-    if(!product) return res.status(404).json({error: 'Product not found'})
+    if (!product) return res.status(404).json({ error: 'Product not found' })
 
     const review = await prisma.review.create({
       data: {
@@ -342,5 +318,3 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 NehaShop Backend running on http://localhost:${PORT}`);
 });
-
-
