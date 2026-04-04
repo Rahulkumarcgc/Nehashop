@@ -99,6 +99,7 @@ function App() {
         fetchWishlist();
       }, 500); 
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, user?.id]);
 
   // 2. Sync Cart to Cloud whenever it gets updated

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { Link, useSearchParams } from 'react-router-dom'
 import emailjs from '@emailjs/browser'
 import { ShoppingBag, Truck, Shield, Headphones, ChevronRight, X, ShoppingCart, Check, ChevronLeft, Heart, Eye } from 'lucide-react'

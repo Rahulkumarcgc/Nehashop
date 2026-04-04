@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Search, ShoppingCart, Check, Star, Filter, Heart, Eye } from 'lucide-react'

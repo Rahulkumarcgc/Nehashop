@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react'

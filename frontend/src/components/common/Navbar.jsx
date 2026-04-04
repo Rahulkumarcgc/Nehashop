@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { SignedIn, SignedOut, UserButton, SignInButton, useUser, useClerk } from '@clerk/clerk-react'
 import { useTheme } from '../../context/ThemeContext'
 import { useProducts } from '../../context/ProductContext'
+import { toast } from 'react-hot-toast'
 
 // GSAP Imports
 import gsap from 'gsap'
@@ -21,7 +22,6 @@ const categories = [
 
 function Navbar({ onCartClick }) {
   const { products } = useProducts()
-  const [isScrolled, setIsScrolled] = useState(false)
   const { isDark, toggleTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')

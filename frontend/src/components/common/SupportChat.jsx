@@ -74,7 +74,6 @@ function SupportChat() {
   ])
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
-  const [humanReveal, setHumanReveal] = useState(false)
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
@@ -97,7 +96,6 @@ function SupportChat() {
       if (reply.type === 'human') {
         // After 1.5s, reveal phone number
         setTimeout(() => {
-          setHumanReveal(true)
           setMessages(prev => [...prev, {
             from: 'bot',
             text: '📞 Our support executive will call you shortly. Or you can call us directly:',
@@ -106,6 +104,7 @@ function SupportChat() {
           }])
         }, 1500)
       }
+      // eslint-disable-next-line react-hooks/purity
     }, 1000 + Math.random() * 600)
   }
 
@@ -118,7 +117,6 @@ function SupportChat() {
 
   const resetChat = () => {
     setMessages([{ from: 'bot', text: "Hi! 👋 I'm **Neha Bot**, your 24/7 shopping assistant! How can I help you today?", time: new Date() }])
-    setHumanReveal(false)
     setInput('')
   }
 

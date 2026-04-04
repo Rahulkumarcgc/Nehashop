@@ -1,64 +1,88 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require("@prisma/client");
 
 const app = express();
 const prisma = new PrismaClient();
 
-// Middleware
 app.use(cors({
-  origin: '*' // later you can replace with your Vercel frontend URL
+  origin: "*"
 }));
 
 app.use(express.json());
 
 
+// test route
+app.get("/", (req, res) => {
+  res.send("Backend working ✅");
+});
+
+
 // ---------------- PRODUCTS ----------------
 
-// Get all products
-app.get('/api/products', async (req, res) => {
+app.get("/api/products", async (req, res) => {
+
   try {
+
     const products = await prisma.product.findMany({
-      orderBy: { numericId: 'asc' }
+      orderBy: { numericId: "asc" }
     });
 
     res.json(products);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+
+    console.log(error);
+
+    res.status(500).json({
+      error: "Failed to fetch products"
+    });
+
   }
+
 });
 
 
-// Get single product
-app.get('/api/products/:id', async (req, res) => {
+app.get("/api/products/:id", async (req, res) => {
+
   try {
+
     const product = await prisma.product.findUnique({
+
       where: {
         id: req.params.id
       }
+
     });
 
     if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
+
+      return res.status(404).json({
+        error: "Product not found"
+      });
+
     }
 
     res.json(product);
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch product' });
   }
+
+  catch (error) {
+
+    res.status(500).json({
+      error: "Failed to fetch product"
+    });
+
+  }
+
 });
 
 
 // ---------------- ORDERS ----------------
 
-// Create order
-app.post('/api/orders', async (req, res) => {
+app.post("/api/orders", async (req, res) => {
 
   try {
 
@@ -102,10 +126,13 @@ app.post('/api/orders', async (req, res) => {
           create: items.map(item => ({
 
             productId: item.dbId,
+
             quantity: item.qty,
+
             priceAtTime: item.price
 
           }))
+
         }
 
       },
@@ -116,7 +143,7 @@ app.post('/api/orders', async (req, res) => {
 
     });
 
-    res.status(201).json({
+    res.json({
       success: true,
       order
     });
@@ -125,10 +152,9 @@ app.post('/api/orders', async (req, res) => {
 
   catch (error) {
 
-    console.error(error);
+    console.log(error);
 
     res.status(500).json({
-      success: false,
       error: "Order failed"
     });
 
@@ -137,8 +163,7 @@ app.post('/api/orders', async (req, res) => {
 });
 
 
-// get user orders
-app.get('/api/orders/:clerkUserId', async (req, res) => {
+app.get("/api/orders/:clerkUserId", async (req, res) => {
 
   try {
 
@@ -149,15 +174,17 @@ app.get('/api/orders/:clerkUserId', async (req, res) => {
       },
 
       include: {
+
         items: {
           include: {
             product: true
           }
         }
+
       },
 
       orderBy: {
-        createdAt: 'desc'
+        createdAt: "desc"
       }
 
     });
@@ -168,10 +195,8 @@ app.get('/api/orders/:clerkUserId', async (req, res) => {
 
   catch (error) {
 
-    console.error(error);
-
     res.status(500).json({
-      error: "Failed to fetch orders"
+      error: "Orders fetch failed"
     });
 
   }
@@ -181,8 +206,7 @@ app.get('/api/orders/:clerkUserId', async (req, res) => {
 
 // ---------------- CART ----------------
 
-// sync cart
-app.post('/api/cart/sync', async (req, res) => {
+app.post("/api/cart/sync", async (req, res) => {
 
   const { clerkUserId, items } = req.body;
 
@@ -198,13 +222,13 @@ app.post('/api/cart/sync', async (req, res) => {
 
         await tx.cartItem.createMany({
 
-          data: items.map(item => ({
+          data: items.map(i => ({
 
             clerkUserId,
 
-            productId: item.dbId || String(item.id),
+            productId: i.dbId,
 
-            quantity: item.qty || item.quantity || 1
+            quantity: i.qty || 1
 
           }))
 
@@ -222,8 +246,6 @@ app.post('/api/cart/sync', async (req, res) => {
 
   catch (error) {
 
-    console.error(error);
-
     res.status(500).json({
       error: "Cart sync failed"
     });
@@ -233,8 +255,7 @@ app.post('/api/cart/sync', async (req, res) => {
 });
 
 
-// get cart
-app.get('/api/cart/:clerkUserId', async (req, res) => {
+app.get("/api/cart/:clerkUserId", async (req, res) => {
 
   try {
 
@@ -256,10 +277,8 @@ app.get('/api/cart/:clerkUserId', async (req, res) => {
 
   catch (error) {
 
-    console.error(error);
-
     res.status(500).json({
-      error: "Failed to fetch cart"
+      error: "Cart fetch failed"
     });
 
   }
@@ -269,8 +288,7 @@ app.get('/api/cart/:clerkUserId', async (req, res) => {
 
 // ---------------- USER ----------------
 
-// sync user
-app.post('/api/users/sync', async (req, res) => {
+app.post("/api/users/sync", async (req, res) => {
 
   try {
 
@@ -283,9 +301,7 @@ app.post('/api/users/sync', async (req, res) => {
 
     const user = await prisma.user.upsert({
 
-      where: {
-        clerkUserId
-      },
+      where: { clerkUserId },
 
       update: {
         email,
@@ -311,220 +327,8 @@ app.post('/api/users/sync', async (req, res) => {
 
   catch (error) {
 
-    console.error(error);
-
     res.status(500).json({
       error: "User sync failed"
-    });
-
-  }
-
-});
-
-
-// ---------------- WISHLIST ----------------
-
-// get wishlist
-app.get('/api/wishlist/:clerkUserId', async (req, res) => {
-
-  try {
-
-    const wishlist = await prisma.wishlistItem.findMany({
-
-      where: {
-        clerkUserId: req.params.clerkUserId
-      },
-
-      include: {
-        product: true
-      }
-
-    });
-
-    res.json(wishlist);
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    res.status(500).json({
-      error: "Wishlist fetch failed"
-    });
-
-  }
-
-});
-
-
-// sync wishlist
-app.post('/api/wishlist/sync', async (req, res) => {
-
-  const { clerkUserId, items } = req.body;
-
-  try {
-
-    await prisma.$transaction(async (tx) => {
-
-      await tx.wishlistItem.deleteMany({
-        where: { clerkUserId }
-      });
-
-      if (items?.length) {
-
-        await tx.wishlistItem.createMany({
-
-          data: items.map(item => ({
-
-            clerkUserId,
-
-            productId:
-              item.dbId ||
-              String(item.id)
-
-          }))
-
-        });
-
-      }
-
-    });
-
-    res.json({
-      success: true
-    });
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    res.status(500).json({
-      error: "Wishlist sync failed"
-    });
-
-  }
-
-});
-
-
-// ---------------- REVIEWS ----------------
-
-// get reviews
-app.get('/api/products/:productId/reviews', async (req, res) => {
-
-  try {
-
-    const reviews = await prisma.review.findMany({
-
-      where: {
-        product: {
-          numericId: parseInt(req.params.productId)
-        }
-      },
-
-      include: {
-        user: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
-        }
-      },
-
-      orderBy: {
-        createdAt: 'desc'
-      }
-
-    });
-
-    res.json(reviews);
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    res.status(500).json({
-      error: "Review fetch failed"
-    });
-
-  }
-
-});
-
-
-// create review
-app.post('/api/reviews', async (req, res) => {
-
-  try {
-
-    const {
-      clerkUserId,
-      productId,
-      rating,
-      comment
-    } = req.body;
-
-    const product = await prisma.product.findUnique({
-
-      where: {
-        numericId: parseInt(productId)
-      }
-
-    });
-
-    if (!product) {
-
-      return res.status(404).json({
-        error: "Product not found"
-      });
-
-    }
-
-    const review = await prisma.review.create({
-
-      data: {
-
-        clerkUserId,
-
-        productId: product.id,
-
-        rating,
-
-        comment
-
-      },
-
-      include: {
-
-        user: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
-        }
-
-      }
-
-    });
-
-    res.json({
-      success: true,
-      review
-    });
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    res.status(500).json({
-      error: "Review failed"
     });
 
   }
@@ -540,7 +344,8 @@ const PORT =
 app.listen(PORT, () => {
 
   console.log(
-    `Server running on port ${PORT}`
+    "Server running on port",
+    PORT
   );
 
 });

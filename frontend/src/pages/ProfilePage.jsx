@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'

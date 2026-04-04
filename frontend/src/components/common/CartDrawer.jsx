@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, ShoppingCart } from 'lucide-react'

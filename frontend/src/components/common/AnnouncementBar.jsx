@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 
 const messages = [
   '🔥 FLASH SALE — Up to 70% OFF on Electronics!',

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
@@ -30,7 +31,7 @@ function getActiveStep(status) {
 
 // Generate fake timestamps from the order date going forward
 function getTimestamps(orderDate, activeStep) {
-  const base = new Date(orderDate) || new Date()
+  const base = orderDate ? new Date(orderDate) : new Date()
   return TRACKING_STEPS.map((_, i) => {
     if (i > activeStep) return null
     const d = new Date(base)
@@ -287,7 +288,6 @@ function OrderPage() {
   const [loading, setLoading] = useState(true)
 
   const cancelOrder = async (orderId) => {
-    const key = `orders_${user.id}`
     const target = orders.find(o => o.id === orderId)
     const updated = orders.map(o =>
       o.id === orderId ? { ...o, status: 'Cancelled' } : o

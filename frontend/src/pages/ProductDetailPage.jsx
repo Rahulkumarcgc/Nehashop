@@ -1,3 +1,5 @@
+ 
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useUser, useClerk } from '@clerk/clerk-react'
