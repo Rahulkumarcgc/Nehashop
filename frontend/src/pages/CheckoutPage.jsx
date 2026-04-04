@@ -179,10 +179,10 @@ Grand Total: ₹${total}
       // 4. Send confirmation email to Customer via EmailJS (sends to actual customer email)
       await emailjs.send(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        import.meta.env.VITE_EMAILJS_ORDER_TEMPLATE_ID,
         {
-          to_name: formData.name,
-          to_email: formData.email,
+          name: formData.name,
+          email: formData.email,
           order_id: compactId,
           order_date: new Date(newOrder.createdAt).toLocaleDateString(),
           order_items: cart.map(item => `${item.qty}x ${item.name} — ₹${item.price * item.qty}`).join('\n'),
