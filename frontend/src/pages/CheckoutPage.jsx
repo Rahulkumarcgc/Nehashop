@@ -1,3 +1,4 @@
+import { API_URL } from '../config.js';
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -41,7 +42,7 @@ function CheckoutPage() {
 
   useEffect(() => {
     // Fetch available coupons
-    fetch('http://localhost:5000/api/coupons')
+    fetch(`${API_URL}/api/coupons`)
       .then(res => res.json())
       .then(data => setAvailableCoupons(data))
       .catch(err => console.error('Failed to load coupons', err))
@@ -55,7 +56,7 @@ function CheckoutPage() {
     if (!codeToApply.trim()) return
     
     try {
-      const res = await fetch('http://localhost:5000/api/coupons/validate', {
+      const res = await fetch(`${API_URL}/api/coupons/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: codeToApply, cartTotal: subtotal })
@@ -119,7 +120,7 @@ function CheckoutPage() {
     toast.loading('Placing order securely...', { id: 'orderToast' });
     try {
       // 1. Save Order to Neon Database
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

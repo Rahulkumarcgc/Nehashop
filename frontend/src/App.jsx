@@ -1,3 +1,4 @@
+import { API_URL } from './config.js';
 import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
@@ -33,7 +34,7 @@ function App() {
   useEffect(() => {
     if (isSignedIn && user?.id) {
       // Sync user profile to backend
-      fetch('http://localhost:5000/api/users/sync', {
+      fetch(`${API_URL}/api/users/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -46,7 +47,7 @@ function App() {
 
       const fetchCart = async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/cart/${user.id}`);
+          const res = await fetch(`${API_URL}/api/cart/${user.id}`);
           const dbCart = await res.json();
           if (Array.isArray(dbCart) && dbCart.length > 0) {
             const formatted = dbCart.map(c => ({
@@ -71,7 +72,7 @@ function App() {
 
       const fetchWishlist = async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/wishlist/${user.id}`);
+          const res = await fetch(`${API_URL}/api/wishlist/${user.id}`);
           const dbWishlist = await res.json();
           if (Array.isArray(dbWishlist) && dbWishlist.length > 0) {
             const formatted = dbWishlist.map(w => ({
@@ -108,7 +109,7 @@ function App() {
       if (isSignedIn && user?.id) {
         const cartKey = `cart_${user.id}`;
         const local = JSON.parse(localStorage.getItem(cartKey) || '[]');
-        fetch('http://localhost:5000/api/cart/sync', {
+        fetch(`${API_URL}/api/cart/sync`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ clerkUserId: user.id, items: local })
@@ -126,7 +127,7 @@ function App() {
       if (isSignedIn && user?.id) {
         const wishKey = `wishlist_${user.id}`;
         const local = JSON.parse(localStorage.getItem(wishKey) || '[]');
-        fetch('http://localhost:5000/api/wishlist/sync', {
+        fetch(`${API_URL}/api/wishlist/sync`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ clerkUserId: user.id, items: local })

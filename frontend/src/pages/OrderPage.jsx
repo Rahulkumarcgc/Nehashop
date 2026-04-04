@@ -1,3 +1,4 @@
+import { API_URL } from '../config.js';
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react'
 import { useUser, useClerk } from '@clerk/clerk-react'
@@ -344,7 +345,7 @@ Order Total : ₹${target.total}
   useEffect(() => {
     if (isSignedIn && user?.id) {
       setLoading(true)
-      fetch(`http://localhost:5000/api/orders/${user.id}`)
+      fetch(`${API_URL}/api/orders/${user.id}`)
         .then(res => res.json())
         .then(data => {
           if(!Array.isArray(data)) return;

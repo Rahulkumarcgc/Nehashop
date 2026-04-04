@@ -1,3 +1,4 @@
+import { API_URL } from '../config.js';
  
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useParams, Link } from 'react-router-dom'
@@ -64,7 +65,7 @@ function ProductDetailPage() {
     // Load reviews from backend
     const fetchReviews = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/products/${product?.numericId}/reviews`)
+        const res = await fetch(`${API_URL}/api/products/${product?.numericId}/reviews`)
         const data = await res.json()
         if (Array.isArray(data)) {
           const formatted = data.map(r => ({
@@ -128,7 +129,7 @@ function ProductDetailPage() {
     if (!newReview.trim()) return
 
     try {
-      const res = await fetch('http://localhost:5000/api/reviews', {
+      const res = await fetch(`${API_URL}/api/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
