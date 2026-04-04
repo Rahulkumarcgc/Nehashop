@@ -1,4 +1,5 @@
 import { API_URL } from '../config.js';
+import emailjs from '@emailjs/browser';
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -175,50 +176,26 @@ Grand Total: ₹${total}
         })
       });
 
-      // 4. Send confirmation email to Customer
-      await fetch('https://api.web3forms.com/submit', {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          access_key: "548886d7-0d2a-44b7-9920-1c6eb13b1244",
-          subject: `✅ Order Confirmed! #${compactId} - NehaShop`,
-          from_name: "NehaShop",
-          name: formData.name,
-          email: formData.email,
-          message: `Hi ${formData.name}! 🎉
-
-Your order has been placed successfully on NehaShop!
-
-━━━━━━━━━━━━━━━━━━━━━━━━
-Order ID: #${compactId}
-Date: ${new Date(newOrder.createdAt).toLocaleDateString()}
-━━━━━━━━━━━━━━━━━━━━━━━━
-
-Items Ordered:
-${cart.map(item => `- ${item.qty}x ${item.name} → ₹${item.price * item.qty}`).join('\n')}
-
-━━━━━━━━━━━━━━━━━━━━━━━━
-Subtotal:    ₹${subtotal}
-Delivery:    ${delivery === 0 ? 'FREE' : '₹' + delivery}
-${couponDiscount > 0 ? `Coupon:      -₹${couponDiscount}` : ''}
-Grand Total: ₹${total}
-━━━━━━━━━━━━━━━━━━━━━━━━
-
-Payment Method: ${paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'upi' ? 'UPI (Pending Verification)' : 'Credit/Debit Card'}
-${paymentMethod === 'upi' ? `\n⏳ Your UPI payment is under verification. Order will be confirmed shortly.\n` : ''}
-
-Shipping To:
-${formData.name}
-${formData.address}, ${formData.city} - ${formData.zip}
-Phone: +91 ${formData.phone}
-
-Thank you for shopping with NehaShop! 🛍️
-We'll notify you once your order is shipped.
-
-Need help? Reply to this email anytime.
-— Team NehaShop ❤️`
-        })
-      });
+      // 4. Send confirmation email to Customer via EmailJS (sends to actual customer email)
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          to_name: formData.name,
+          to_email: formData.email,
+          order_id: compactId,
+          order_date: new Date(newOrder.createdAt).toLocaleDateString(),
+          order_items: cart.map(item => `${item.qty}x ${item.name} — ₹${item.price * item.qty}`).join('\n'),
+          subtotal: `₹${subtotal}`,
+          delivery: delivery === 0 ? 'FREE' : `₹${delivery}`,
+          coupon_discount: couponDiscount > 0 ? `-₹${couponDiscount}` : 'None',
+          grand_total: `₹${total}`,
+          payment_method: paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'upi' ? 'UPI (Pending Verification)' : 'Credit/Debit Card',
+          shipping_address: `${formData.address}, ${formData.city} - ${formData.zip}`,
+          shipping_phone: `+91 ${formData.phone}`,
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
 
       toast.success(paymentMethod === 'upi' ? '⏳ Order securely placed! Pending UPI Verification.' : '🎉 Order placed! Confirmation email sent!', {
         id: 'orderToast',
