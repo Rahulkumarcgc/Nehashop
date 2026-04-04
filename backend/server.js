@@ -333,6 +333,66 @@ app.post("/api/users/sync", async (req, res) => {
 });
 
 
+// ---------------- COUPONS ----------------
+
+app.get("/api/coupons", async (req, res) => {
+  try {
+    const coupons = await prisma.coupon.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json(coupons);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Failed to fetch coupons" });
+  }
+});
+
+app.post("/api/coupons/validate", async (req, res) => {
+  try {
+    const { code, cartTotal } = req.body;
+
+    if (!code) return res.status(400).json({ valid: false, error: "No coupon code provided" });
+
+    const coupon = await prisma.coupon.findUnique({
+      where: { code: code.toUpperCase() }
+    });
+
+    if (!coupon) return res.json({ valid: false, error: "Invalid coupon code" });
+    if (!coupon.isActive) return res.json({ valid: false, error: "This coupon is no longer active" });
+
+    const now = new Date();
+    if (coupon.validUntil && now > new Date(coupon.validUntil))
+      return res.json({ valid: false, error: "This coupon has expired" });
+    if (coupon.validFrom && now < new Date(coupon.validFrom))
+      return res.json({ valid: false, error: "This coupon is not valid yet" });
+    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit)
+      return res.json({ valid: false, error: "This coupon has reached its usage limit" });
+    if (coupon.minOrderAmount && cartTotal < coupon.minOrderAmount)
+      return res.json({ valid: false, error: `Minimum order of ₹${coupon.minOrderAmount} required` });
+
+    let discount = 0;
+    if (coupon.discountType === "percentage") {
+      discount = Math.round((cartTotal * coupon.discountValue) / 100);
+      if (coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
+    } else {
+      discount = coupon.discountValue;
+    }
+    discount = Math.min(discount, cartTotal);
+
+    res.json({
+      valid: true,
+      discount,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ valid: false, error: "Server error validating coupon" });
+  }
+});
+
+
 // ---------------- SERVER ----------------
 
 const PORT =
