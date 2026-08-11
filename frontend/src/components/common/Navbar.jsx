@@ -324,7 +324,7 @@ function Navbar({ onCartClick }) {
               {/* Autocomplete Dropdown */}
               {isSearchFocused && (
                 <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[9999] p-3 flex flex-col gap-2">
-                  
+
                   {/* Empty Search: Recent / Trending */}
                   {searchQuery.length === 0 && (
                     <div className="px-2 py-1">
@@ -343,16 +343,16 @@ function Navbar({ onCartClick }) {
                           </div>
                         </div>
                       )}
-                      
+
                       <div>
-                         <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">🔥 Trending Categories</p>
-                         <div className="grid grid-cols-2 gap-2">
-                           {categories.filter(c=>c.name!=='All').slice(0, 4).map(cat => (
-                             <button key={cat.name} onClick={() => handleCategorySelect(cat.name)} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 hover:bg-orange-50 px-3 py-2 rounded-xl transition-colors text-left border border-gray-50 hover:border-orange-100">
-                               {cat.icon} <span className="font-semibold">{cat.name}</span>
-                             </button>
-                           ))}
-                         </div>
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">🔥 Trending Categories</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {categories.filter(c => c.name !== 'All').slice(0, 4).map(cat => (
+                            <button key={cat.name} onClick={() => handleCategorySelect(cat.name)} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 hover:bg-orange-50 px-3 py-2 rounded-xl transition-colors text-left border border-gray-50 hover:border-orange-100">
+                              {cat.icon} <span className="font-semibold">{cat.name}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}

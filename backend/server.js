@@ -393,6 +393,155 @@ app.post("/api/coupons/validate", async (req, res) => {
 });
 
 
+// ---------------- WISHLIST ----------------
+
+app.get("/api/wishlist/:clerkUserId", async (req, res) => {
+  try {
+    const wishlist = await prisma.wishlistItem.findMany({
+      where: {
+        clerkUserId: req.params.clerkUserId
+      },
+      include: {
+        product: true
+      }
+    });
+    res.json(wishlist);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: "Wishlist fetch failed"
+    });
+  }
+});
+
+app.post("/api/wishlist/sync", async (req, res) => {
+  const { clerkUserId, items } = req.body;
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.wishlistItem.deleteMany({
+        where: { clerkUserId }
+      });
+      if (items?.length) {
+        await tx.wishlistItem.createMany({
+          data: items.map(i => ({
+            clerkUserId,
+            productId: i.dbId
+          }))
+        });
+      }
+    });
+    res.json({
+      success: true
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: "Wishlist sync failed"
+    });
+  }
+});
+
+
+// ---------------- REVIEWS ----------------
+
+app.get("/api/products/:productId/reviews", async (req, res) => {
+  try {
+    const { productId } = req.params;
+    let product;
+    if (/^\d+$/.test(productId)) {
+      product = await prisma.product.findUnique({
+        where: { numericId: parseInt(productId) }
+      });
+    } else {
+      product = await prisma.product.findUnique({
+        where: { id: productId }
+      });
+    }
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    const reviews = await prisma.review.findMany({
+      where: { productId: product.id },
+      include: {
+        user: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json(reviews);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Failed to fetch reviews" });
+  }
+});
+
+app.post("/api/reviews", async (req, res) => {
+  try {
+    const { clerkUserId, productId, rating, comment } = req.body;
+    let product;
+    if (typeof productId === "number" || /^\d+$/.test(String(productId))) {
+      product = await prisma.product.findUnique({
+        where: { numericId: parseInt(productId) }
+      });
+    } else {
+      product = await prisma.product.findUnique({
+        where: { id: productId }
+      });
+    }
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    let userRecord = await prisma.user.findUnique({
+      where: { clerkUserId }
+    });
+
+    if (!userRecord) {
+      userRecord = await prisma.user.create({
+        data: {
+          clerkUserId,
+          email: `${clerkUserId}@placeholder.com`,
+          firstName: "Anonymous",
+          lastName: ""
+        }
+      });
+    }
+
+    const review = await prisma.review.create({
+      data: {
+        clerkUserId,
+        productId: product.id,
+        rating: parseInt(rating),
+        comment,
+      },
+      include: {
+        user: true
+      }
+    });
+
+    // Update product rating average
+    const allReviews = await prisma.review.findMany({
+      where: { productId: product.id }
+    });
+    const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { rating: parseFloat(avgRating.toFixed(1)) }
+    });
+
+    res.json({
+      success: true,
+      review
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Failed to submit review" });
+  }
+});
+
+
 // ---------------- SERVER ----------------
 
 const PORT =
